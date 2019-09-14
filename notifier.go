@@ -22,15 +22,6 @@ type ObserverStorage map[IObserver]struct{}
 var defaultNotifierStorage = make(NotifierStorage, InitNotifierCapacity)
 var defaultSyncMutex sync.Mutex
 
-// 获取通告者, 如果没有返回nil
-func GetNotifier(name string) INotifier {
-    defaultSyncMutex.Lock()
-    defer defaultSyncMutex.Unlock()
-
-    n, _ := defaultNotifierStorage[name]
-    return n
-}
-
 type INotifier interface {
     // 注册观察者
     Register(IObserver)
@@ -92,11 +83,6 @@ func (m *notifier) NotifyMessage(body interface{}) {
 
 // 创建一个通告者
 func NewNotifier(name string) (INotifier, error) {
-    n := &notifier{
-        name:      name,
-        observers: make(ObserverStorage, InitObserverCapacity),
-    }
-
     defaultSyncMutex.Lock()
     defer defaultSyncMutex.Unlock()
 
@@ -104,6 +90,27 @@ func NewNotifier(name string) (INotifier, error) {
         return nil, zerrors.New(CreateNotifierIsExistsErr)
     }
 
+    n := &notifier{
+        name:      name,
+        observers: make(ObserverStorage, InitObserverCapacity),
+    }
     defaultNotifierStorage[name] = n
     return n, nil
+}
+
+// 获取通告者, 如果没有返回nil
+func GetNotifier(name string) INotifier {
+    defaultSyncMutex.Lock()
+    defer defaultSyncMutex.Unlock()
+
+    n, _ := defaultNotifierStorage[name]
+    return n
+}
+
+// 删除通告者, 它仅仅将通告者从通告者池中移除, 该通告者仍然能正常使用, 但是不能用 GetNotifier 获取到该通告者
+func DelNotifier(name string) {
+    defaultSyncMutex.Lock()
+    defer defaultSyncMutex.Unlock()
+
+    delete(defaultNotifierStorage, name)
 }

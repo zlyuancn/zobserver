@@ -15,10 +15,10 @@ type IMessage interface {
 }
 
 type message struct {
-    body interface{} //通告内容
+    body interface{}
 }
 
-// 获取通告数据
+// 获取通告内容
 func (m *message) Body() interface{} {
     return m.body
 }

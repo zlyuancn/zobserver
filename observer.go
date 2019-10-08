@@ -29,3 +29,13 @@ func NewObserver(fn ActionFunc) IObserver {
         action: fn,
     }
 }
+
+// 创建一个观察者并注册到通告者
+func NewObserverAndReg(notifyName string, fn ActionFunc) (INotifier, IObserver) {
+    ob := &observer{
+        action: fn,
+    }
+    notifier := CreateOrGerNotifier(notifyName)
+    notifier.Register(ob)
+    return notifier, ob
+}

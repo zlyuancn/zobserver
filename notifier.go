@@ -33,11 +33,14 @@ type INotifier interface {
     Notify(IMessage)
     // 通告
     NotifyMessage(body interface{})
+    // 销毁
+    Distroy()
 }
 
 type notifier struct {
     name      string
     observers ObserverStorage
+    distroy   bool
     mx        sync.Mutex
 }
 
@@ -46,7 +49,9 @@ func (m *notifier) Register(observer IObserver) {
     m.mx.Lock()
     defer m.mx.Unlock()
 
-    m.observers[observer] = struct{}{}
+    if !m.distroy {
+        m.observers[observer] = struct{}{}
+    }
 }
 
 // 注册观察函数
@@ -69,8 +74,10 @@ func (m *notifier) Notify(msg IMessage) {
     m.mx.Lock()
     defer m.mx.Unlock()
 
-    for o := range m.observers {
-        o.OnNotify(m.name, msg)
+    if !m.distroy {
+        for o := range m.observers {
+            o.OnNotify(m.name, msg)
+        }
     }
 }
 
@@ -79,6 +86,15 @@ func (m *notifier) NotifyMessage(body interface{}) {
     m.Notify(&message{
         body: body,
     })
+}
+
+// 销毁
+func (m *notifier) Distroy() {
+    m.mx.Lock()
+    defer m.mx.Unlock()
+
+    m.distroy = true
+    m.observers = ObserverStorage{}
 }
 
 // 创建一个通告者
@@ -98,6 +114,23 @@ func NewNotifier(name string) (INotifier, error) {
     return n, nil
 }
 
+// 创建一个通告者, 如果通告者已存在则获取它
+func CreateOrGerNotifier(name string) INotifier {
+    defaultSyncMutex.Lock()
+    defer defaultSyncMutex.Unlock()
+
+    if notifier, ok := defaultNotifierStorage[name]; ok {
+        return notifier
+    }
+
+    n := &notifier{
+        name:      name,
+        observers: make(ObserverStorage, InitObserverCapacity),
+    }
+    defaultNotifierStorage[name] = n
+    return n
+}
+
 // 获取通告者, 如果没有返回nil
 func GetNotifier(name string) INotifier {
     defaultSyncMutex.Lock()
@@ -107,10 +140,13 @@ func GetNotifier(name string) INotifier {
     return n
 }
 
-// 删除通告者, 它仅仅将通告者从通告者池中移除, 该通告者仍然能正常使用, 但是不能用 GetNotifier 获取到该通告者
+// 删除通告者
 func DelNotifier(name string) {
     defaultSyncMutex.Lock()
     defer defaultSyncMutex.Unlock()
 
-    delete(defaultNotifierStorage, name)
+    if notifier, ok := defaultNotifierStorage[name]; ok {
+        delete(defaultNotifierStorage, name)
+        notifier.Distroy()
+    }
 }

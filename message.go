@@ -11,21 +11,21 @@ package zobserver
 // 通告消息
 type IMessage interface {
     // 获取通告消息类型
-    MsgType() int
+    Type() string
     // 获取通告主要内容
     Body() interface{}
-    // 获取通告自定义数据
-    Custom() map[string]interface{}
+    // 获取通告附加数据
+    Meta() map[string]interface{}
 }
 
 type message struct {
-    msg_type int
+    msg_type string
     body     interface{}
-    custom   map[string]interface{}
+    meta     map[string]interface{}
 }
 
 // 获取通告消息类型
-func (m *message) MsgType() int {
+func (m *message) Type() string {
     return m.msg_type
 }
 
@@ -35,8 +35,8 @@ func (m *message) Body() interface{} {
 }
 
 // 获取通告自定义数据
-func (m *message) Custom() map[string]interface{} {
-    return m.custom
+func (m *message) Meta() map[string]interface{} {
+    return m.meta
 }
 
 // 创建一条消息
@@ -47,18 +47,18 @@ func NewMessage(body interface{}) IMessage {
 }
 
 // 创建一条指定类型的消息
-func NewMessageWithType(msg_type int, body interface{}) IMessage {
+func NewMessageWithType(msg_type string, body interface{}) IMessage {
     return &message{
         msg_type: msg_type,
         body:     body,
     }
 }
 
-// 创建一条自定义消息
-func NewCustomMessage(msg_type int, body interface{}, custom map[string]interface{}) IMessage {
+// 创建一条包含附加数据的消息
+func NewMessageWithMeta(msg_type string, body interface{}, meta map[string]interface{}) IMessage {
     return &message{
         msg_type: msg_type,
         body:     body,
-        custom:   custom,
+        meta:     meta,
     }
 }

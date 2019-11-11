@@ -15,13 +15,13 @@ type IMessage interface {
     // 获取通告主要内容
     Body() interface{}
     // 获取通告附加数据
-    Meta() map[string]interface{}
+    Meta() interface{}
 }
 
 type message struct {
     msg_type string
     body     interface{}
-    meta     map[string]interface{}
+    meta     interface{}
 }
 
 // 获取通告消息类型
@@ -35,7 +35,7 @@ func (m *message) Body() interface{} {
 }
 
 // 获取通告自定义数据
-func (m *message) Meta() map[string]interface{} {
+func (m *message) Meta() interface{} {
     return m.meta
 }
 
@@ -55,7 +55,7 @@ func NewMessageWithType(msg_type string, body interface{}) IMessage {
 }
 
 // 创建一条包含附加数据的消息
-func NewMessageWithMeta(msg_type string, body interface{}, meta map[string]interface{}) IMessage {
+func NewMessageWithMeta(msg_type string, body interface{}, meta interface{}) IMessage {
     return &message{
         msg_type: msg_type,
         body:     body,

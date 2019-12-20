@@ -16,13 +16,18 @@ type IObserver interface {
 }
 
 type observer struct {
-    action      ActionFunc
-    listen_type string
-    has_type    bool
+    action     ActionFunc
+    msgtypes   map[string]struct{}
+    is_msgtype bool
 }
 
 func (m *observer) OnNotify(notifyName string, msg IMessage) {
-    if m.has_type || m.listen_type == msg.Type() {
+    if !m.is_msgtype {
+        m.action(notifyName, msg)
+        return
+    }
+
+    if _, ok := m.msgtypes[msg.Type()]; ok {
         m.action(notifyName, msg)
     }
 }
@@ -35,11 +40,15 @@ func NewObserver(fn ActionFunc) IObserver {
 }
 
 // 创建一个观察者并指定监听的消息类型
-func NewObserverWithType(msg_type string, fn ActionFunc) IObserver {
+func NewObserverWithType(fn ActionFunc, msgtypes ...string) IObserver {
+    mm := make(map[string]struct{}, len(msgtypes))
+    for _, t := range msgtypes {
+        mm[t] = struct{}{}
+    }
     return &observer{
-        action:      fn,
-        listen_type: msg_type,
-        has_type:    true,
+        action:     fn,
+        msgtypes:   mm,
+        is_msgtype: true,
     }
 }
 
@@ -54,11 +63,15 @@ func NewObserverAndReg(notifyName string, fn ActionFunc) (INotifier, IObserver) 
 }
 
 // 创建一个观察者并指定监听的消息类型然后注册到通告者
-func NewObserverAndRegWithType(notifyName string, msg_type string, fn ActionFunc) (INotifier, IObserver) {
+func NewObserverAndRegWithType(notifyName string, fn ActionFunc, msgtypes ...string) (INotifier, IObserver) {
+    mm := make(map[string]struct{}, len(msgtypes))
+    for _, t := range msgtypes {
+        mm[t] = struct{}{}
+    }
     ob := &observer{
-        action:      fn,
-        listen_type: msg_type,
-        has_type:    true,
+        action:     fn,
+        msgtypes:   mm,
+        is_msgtype: true,
     }
     notifier := CreateOrGerNotifier(notifyName)
     notifier.Register(ob)
